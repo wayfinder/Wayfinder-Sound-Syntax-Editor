@@ -1,0 +1,93 @@
+<project default="default">
+
+    <!-- SETUP SECTION -->
+
+    <target name="initpaths">
+        <!-- Work paths -->
+        <property name="path.base" location=".."/>
+        <property name="path.build" location="${java.io.tmpdir}/syntaxedit"/>
+        <property name="path.dist" location="${path.base}/dist"/>
+
+        <!-- All source code we want to compile -->
+        <path id="ref.path.src">
+            <pathelement location="${path.base}/src" />
+        </path>
+
+        <!-- Any JUnit tests - it's good for the environment and ok for you! -->
+        <path id="ref.path.testsrc">
+
+        </path>
+
+        <!-- Name of the project -->
+        <property name="project.name" value="SyntaxEdit"/>
+        <!-- Current Android version -->
+        <property name="project.version" value="1.0"/>
+    </target>
+
+
+    <target name="clean" 
+            depends="initpaths"
+            description="Deletes the temp and dist dirs">
+        <delete dir="${path.build}" />
+        <delete dir="${path.final}" />
+    </target>
+
+
+    <!-- COMPILE SECTION -->
+
+    <target name="compile" 
+         depends="initpaths"
+         description="Compiles the source code">
+
+        <mkdir dir="${path.build}"/>
+        <mkdir dir="${path.build}/classes" />
+        
+        <!-- Libraries for inclusion, grab everything in the lib dir -->
+        <path id="ref.path.lib">
+            <fileset dir="${path.base}/lib">
+                <include name="*.jar" />
+            </fileset>
+        </path>
+
+        <javac classpathref="ref.path.lib"    
+               destdir="${path.build}/classes" 
+               debug="true"
+               debuglevel="line,vars,source">
+            <src refid="ref.path.src"/>
+        </javac>
+    </target>
+
+
+    <target name="jarfile" 
+            depends="compile"
+            description="Creates a raw, unobfuscated jarfile from the compiled classes">
+
+        <mkdir dir="${path.dist}" />
+        <property name="distjarfile" value="${path.dist}/${project.name}.jar"/>
+
+        
+        <!-- make the jarfile -->
+        <manifestclasspath property="dist.manifest.classpath" jarfile="${distjarfile}">
+            <classpath refid="ref.path.lib" />
+        </manifestclasspath>
+        
+        <jar destfile="${distjarfile}" index="true" compress="true">
+            <zipfileset dir="${path.build}/classes"/>
+            <!-- Include the contents of all the libfiles -->
+            <zipgroupfileset dir="${path.base}/lib" includes="*.jar"/>
+            <!-- Include all images -->
+            <zipfileset dir="${path.base}" includes="res/**/*"/>
+            <manifest>
+                <attribute name="Main-Class" value="com.wayfinder.syntaxedit.Main"/>
+                <attribute name="Class-Path" value="${dist.manifest.classpath}"/>
+                <attribute name="Version" value="${project.version}"/>
+            </manifest>
+        </jar>
+    </target>
+    
+    <target name="default" description="Used when just calling ant, cleans compiles and jarzorz">
+        <antcall target="clean"/>
+        <antcall target="jarfile"/>
+    </target>
+    
+</project>
